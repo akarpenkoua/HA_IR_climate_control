@@ -1,0 +1,17 @@
+# Add this lines to your ui-lovelace.yaml file. Do not overrode all data in it.
+# Templates to manage button styles for custom card https://github.com/custom-cards/button-card#Configuration-Templates  
+button_card_templates:
+  btc_timer:
+    show_state: false
+    show_label: false
+    show_units: false
+    show_name: false
+    show_icon: true
+    aspect_ratio: 1.5/1    
+    layout: icon_name_state
+    styles:
+      card:
+      - align-self: center
+      name:
+      - font-size: 14px
+#################################################
