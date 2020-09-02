@@ -1,0 +1,130 @@
+# This is an element that I have configured to work with my package https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/ir_ac_management.yaml
+#########################
+# https://github.com/custom-cards/stack-in-card
+- type: custom:stack-in-card
+  mode: vertical
+# https://github.com/nervetattoo/simple-thermostat  
+  cards:
+  - type: 'custom:simple-thermostat'
+    entity: climate.k1_ac
+    name: K1 Kitchen
+    step_size: 1
+    decimals: 0
+    step_layout: row #column
+    icon: mdi:air-conditioner
+    hide:
+      state: true
+      temperature: true
+    control:
+      _names: false
+      hvac: true      
+    sensors:
+      - entity: sensor.k1_ac_power
+        name: Power
+      - entity: sensor.k1_ac_energy_today
+        name: Today
+    style: |
+      ha-card {
+        --st-font-size-title: 18px;
+        --st-spacing: 3px
+      }    
+# Second row - Swing, and timer, power state
+
+  - type: horizontal-stack
+    cards:
+# https://github.com/custom-cards/button-card#Configuration-Templates
+# Temolate is in UI-Lovelace.yaml    
+  # Power status
+    - type: 'custom:button-card'
+      template: btc_timer
+      entity: sensor.k1_ac_data
+      layout: name_state
+      icon: >
+        [[[
+          var k1_ac_pwr = states['sensor.k1_ac_power_state'].state;
+          if (k1_ac_pwr == 'On') return 'mdi:power-plug';
+          else return 'mdi:power-plug-off';
+        ]]]
+      styles:
+        icon:
+        - color: >
+            [[[
+              var k1_ac_pwr = states['sensor.k1_ac_power_state'].state;
+              if (k1_ac_pwr == 'On') return 'red';
+              if (k1_ac_pwr == 'Off') return 'var(--paper-item-icon-color)';
+              else return 'auto';
+            ]]]
+            
+  #SWING  
+    - type: 'custom:button-card'
+      entity: switch.k1_ac_swing_switch
+      template: btc_timer
+      show_name: False
+      name: Swing
+      layout: name_state
+      state:
+        - value: 'on'
+          color: var(--paper-item-icon-color)
+  
+  #Left arrow
+    - type: 'custom:button-card'
+      entity: script.k1_ac_timerdown
+      template: btc_timer
+      icon: mdi:chevron-left
+      layout: name_state
+      tap_action:
+        action: call-service
+        service: script.turn_on
+        service_data:
+          entity_id: script.k1_ac_timerdown
+      styles:
+        img_cell:
+        - justify-content: flex-end
+        
+  #Timer value
+    - type: 'custom:button-card'
+      entity: input_datetime.k1_ac_timer
+      template: btc_timer
+      show_state: true
+      state_display: >
+        [[[ 
+        var x = states['input_datetime.k1_ac_timer'].attributes.timestamp;
+        var d = new Date((x- 3*60*60) * 1000 );
+        var hours = d.getHours(x);
+        var minutes = "0" + d.getMinutes(x);
+        return hours + ':' + minutes.substr(-2) + 'h';
+        ]]]
+      icon: mdi:timer-outline
+      tap_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.k1_ac_timer_switch
+  #RIGHT Arrow  
+    - type: 'custom:button-card'
+      entity: script.k1_ac_timerup
+      template: btc_timer
+      icon: mdi:chevron-right
+      layout: name_state
+      tap_action:
+        action: call-service
+        service: script.turn_on
+        service_data:
+          entity_id: script.k1_ac_timerup
+      styles:
+        img_cell:
+        - justify-content: flex-start
+
+  # Timer status
+    - type: 'custom:button-card'
+      entity: timer.k1_ac_timer
+      template: btc_timer
+      show_state: true
+      show_icon: false
+      layout: name_state
+      tap_action:
+        action: call-service
+        service: switch.toggle
+        service_data:
+          entity_id: switch.k1_ac_timer_switch
+#########################
