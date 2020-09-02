@@ -29,18 +29,21 @@ I have started it as a day-to-day improvement, but it ended with 400 lines of co
 [Genereal design for Temperature Lovelace View (one card, multiply it for your rooms/zones)](https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/custom_climate_page_card.yaml)
 
 #####################################################
-![Preview](https://user-images.githubusercontent.com/457678/52977264-edf34980-33cc-11e9-903b-cee43b307ed8.png)
 
+![all](media/ac_gif.gif)
+![Preview](media/ac_desktop1.jpg)
+![Preview](media/ac_desktop2.jpg)
+![Preview](media/ac_mobile.jpg)
 
-Logic: 
-General UI layout https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/custom_climate_page_card.yaml
+**Logic:** 
+General [UI layout](https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/custom_climate_page_card.yaml)
 - Each room/space has it's own place/card. Unside it there are swiped cards:
   - First card - Picture with sensors data
   - Second - mini-graph. Humidity is a key metric to monitor as it's really important to stay helthy at home. 
   - Third+ card - some card to mamage the climate.
   - Swipe jumps back to the enitial view in 10 seconds
 
-AC IR management package:
+AC IR management [package](https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/ir_ac_management.yaml):
 - Main data is collected from virtual climate device to mega-sensor. 
 - Data from sensor is concatinated to script name
 - You need to create a matrix of scripts for each command. In my case 4*2*2 24/25/26/27 C * Swing Up/Down * Cool/Heat
