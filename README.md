@@ -1,10 +1,10 @@
 I have started it as a day-to-day improvement, but it ended with 400 lines of code. Hope it will be used by someone. 
 
-Basic task:
+**Basic task:**
 - To create a lovely page to controll all temperature and humidiy data for Lovelace from Home Assistant
 
-Hardware and software:
-  Software:
+**Hardware and software:**
+  **Software:**
   - Home assistant (0.114.3 at this moment)
   - HACS
     - https://github.com/bramkragten/swipe-card
@@ -13,12 +13,12 @@ Hardware and software:
     - https://github.com/thomasloven/lovelace-card-mod
     - https://github.com/custom-cards/stack-in-card
     - https://github.com/nervetattoo/simple-thermostat
-  Hardware:
+  **Hardware:**
   - Broadlink RM Pro/Mini - Will send the commands to the AC
   - Cooper&Hunter CH-S09XN7 (or any AC with IR remote)
   - PZEM 004v3 + Sonoff Basic (or any esp32/8266 board with Tasmota) - Used to monitor if the AC is ON or OFF and power consumtion as a benefit
 
-As a result:
+**As a result:**
 - Package to manage AC: 
   - Package https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/ir_ac_management.yaml
   - Button card template https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/ui-lovelace.yaml
@@ -28,6 +28,8 @@ Genereal design for Temperature Lovelace View (one card, multiply it for your ro
   - https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/custom_climate_page_card.yaml
 
 #####################################################
+![Preview](https://user-images.githubusercontent.com/457678/52977264-edf34980-33cc-11e9-903b-cee43b307ed8.png)
+
 
 Logic: 
 General UI layout https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/custom_climate_page_card.yaml
