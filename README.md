@@ -49,6 +49,7 @@ AC IR management [package](https://github.com/akarpenkoua/HA_IR_climate_control/
 - Scripts have own name convention, like: k1_ac_cool_24_up 
 - Some automation to manage it
 - I'm using PZEM 004 to monitor energy and ON and OFF status, but you can use any small door sensor, or anything else. 
+- I made a [combination of cards](https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/custom_climate_card.yaml) to make it work and look as I think is good. + [Some button card templates](https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/ui-lovelace.yaml) to save code space
 
 Please take a look at the code comment at the package. 
 Have fun and Enjoy.
