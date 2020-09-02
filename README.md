@@ -1,4 +1,4 @@
-# Home assistatnt package to manage IR AC and lovelace cards configurations
+# Home assistant package to manage IR AC and lovelace cards configurations
 I have started it as a day-to-day improvement, but it ended with 400 lines of code. Hope it will be used by someone. 
 
 **Basic task:**
