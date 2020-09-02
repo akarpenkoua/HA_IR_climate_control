@@ -1,0 +1,429 @@
+### This package is for managing AC with broadlink ###
+### k1_ac means kitchen1 air conditioner. This is my HA naming convention ### 
+input_datetime:
+# Is used to set timer time from UI
+  k1_ac_timer:
+    name: K1 AC inpute time for timer
+    has_date: false
+    has_time: true
+    initial: '00:30:00'
+
+input_boolean:
+# Item to save swing position. In my case I'm using 95% or full up or full down position. You can redo it to unput_number for more options
+  k1_ac_swing:
+
+input_text:  
+# Used to compare what has changed from last call
+  k1_ac_prev_data:
+
+timer:
+  k1_ac_timer:
+    name: Turn off K1 AC in -  
+    duration: '00:30:00'
+    
+sensor:
+# I use power stats from PZEM 004 v3 collected with Tasmota.
+# Tasmota rules for logical sensor
+# Rule   ON tele-ENERGY#Power>5 DO publish tele/k1_ac_power/power On ENDON  ON tele-ENERGY#Power<5 DO publish tele/k1_ac_power/power Off ENDON
+# TelePeriod 30
+- platform: mqtt
+  name: K1 AC Power state
+  state_topic: "tele/k1_ac_power/power"
+  # value_template: "{{ value_json['ENERGY'].Total }}"
+  icon: mdi:power-plug
+
+# PZEM power monitoring Sensors
+- platform: mqtt
+  name: K1 AC Voltage
+  state_topic: "tele/k1_ac_garland/SENSOR"
+  value_template: "{{ value_json['ENERGY'].Voltage }}"
+  unit_of_measurement: "V"
+  icon: mdi:flash
+- platform: mqtt
+  name: K1 AC Current
+  state_topic: "tele/k1_ac_garland/SENSOR"
+  value_template: "{{ value_json['ENERGY'].Current }}"
+  unit_of_measurement: "A"
+  icon: mdi:power-socket
+- platform: mqtt
+  name: K1 AC Power
+  state_topic: "tele/k1_ac_garland/SENSOR"
+  value_template: "{{ value_json['ENERGY'].Power }}"
+  unit_of_measurement: "W"
+  icon: mdi:power-plug
+- platform: mqtt
+  name: K1 AC Power Factor
+  state_topic: "tele/k1_ac_garland/SENSOR"
+  value_template: "{{ value_json['ENERGY'].Factor }}"
+  icon: mdi:percent
+- platform: mqtt
+  name: K1 AC Energy Today
+  state_topic: "tele/k1_ac_garland/SENSOR"
+  value_template: "{{ value_json['ENERGY'].Today }}"
+  unit_of_measurement: "kWh"
+  icon: mdi:calendar-today
+- platform: mqtt
+  name: K1 AC Energy Yesterday
+  state_topic: "tele/k1_ac_garland/SENSOR"
+  value_template: "{{ value_json['ENERGY'].Yesterday }}"
+  unit_of_measurement: "kWh"
+  icon: mdi:calendar-today
+- platform: mqtt
+  name: K1 AC Energy Total
+  state_topic: "tele/k1_ac_garland/SENSOR"
+  value_template: "{{ value_json['ENERGY'].Total }}"
+  unit_of_measurement: "kWh"
+  icon: mdi:calendar-blank
+
+# Template sensors to manage data
+- platform: template
+  sensors:
+# Mega-sensor agrigator of needed data. Combines data from interface of Climat and concats it into the string
+    k1_ac_data:
+# Template looks for those entities to update this sensor
+      entity_id:
+        - climate.k1_ac
+        - input_boolean.k1_ac_swing
+        - switch.k1_ac_swing_switch
+      friendly_name: k1 ac hvac and temp data
+      value_template: >
+        {% if is_state('climate.k1_ac', 'off') %}
+          turn_k1_ac_off
+        {% else %}
+          turn_k1_ac_{{ states('climate.k1_ac') }}_{{ state_attr('climate.k1_ac', 'temperature')|round(0) }}_{{ state_attr('sensor.k1_ac_data', 'swing') }}
+        {% endif %}
+
+      attribute_templates:
+      # All this is used here just to show all data at one Sensor
+        target_temperature: > 
+          {{ state_attr('climate.k1_ac', 'temperature')|round(0) }}
+        swing: >
+          {% if is_state('switch.k1_ac_swing_switch', 'on') %}
+            down
+          {% else %}
+            up
+          {% endif %}
+        k1_ac_prev_data: >
+          {{ states('input_text.k1_ac_prev_data') }}
+#Created as separate sensor as Climate integration needs one to store data.
+    k1_ac_target_temperature:
+      entity_id:
+        - climate.k1_ac
+      value_template: >
+        {{ state_attr('climate.k1_ac', 'temperature')|round(0) }}
+
+switch:
+  - platform: template
+    switches:
+# Switch to track swing position as a simple toggle
+      k1_ac_swing_switch:
+        friendly_name: Manage k1 ac swing mode
+        value_template: "{{ states('input_boolean.k1_ac_swing') }}"        
+        turn_on:
+          service: input_boolean.turn_on
+          data:
+            entity_id: input_boolean.k1_ac_swing
+        turn_off:
+          service: input_boolean.turn_off
+          data:
+            entity_id: input_boolean.k1_ac_swing
+        icon_template: >
+          {% if is_state_attr('sensor.k1_ac_data', 'swing', 'up') %}
+            mdi:arrow-right-bold
+          {% else %}
+            mdi:arrow-down-bold
+          {% endif %}
+# Timer switch to put time from the UI to the timer
+      k1_ac_timer_switch:
+        friendly_name: Turn k1 ac timer
+        icon_template: mdi:timer
+        value_template: >
+          {% if is_state('timer.k1_ac_timer', 'active') %}
+            on
+          {% else %}
+            off
+          {% endif %}
+        turn_on:
+          service: timer.start
+          data_template:
+            entity_id: timer.k1_ac_timer
+            duration: "{{ states('input_datetime.k1_ac_timer') }}"
+        turn_off:
+          service: timer.cancel
+          data:
+            entity_id: timer.k1_ac_timer
+
+climate:
+# info https://github.com/custom-components/climate.programmable_thermostat
+# This entity will be used to save some coding as it has Target temp, hvac mode and can be used in automations
+  - platform: programmable_thermostat
+    name: k1_ac
+# No need to put anything real here
+    heater: switch.dummyswitch
+    cooler: switch.dummyswitch
+    actual_temp_sensor: sensor.zigbee2_temperature_kitchen_k1
+    min_temp: 24
+    max_temp: 27
+    target_temp_sensor: sensor.k1_ac_target_temperature
+    tolerance: 1
+    hvac_options: 3
+    auto_mode: all
+
+automation:
+# Tracks if any data in master sensor is changed and act a master switch with new data
+  - id: k1_ac_sync
+    alias: K1 AC main sync process
+    description: 'Watches for the change of k1_ac_data sensor and turns script to triger the remote'
+    trigger:
+    - platform: state
+      entity_id: sensor.k1_ac_data
+    condition:
+    - condition: template
+      value_template: "{{ states('sensor.k1_ac_data') != states('input_text.k1_ac_prev_data') }}"
+    action:
+    - service: script.turn_on
+      entity_id: script.k1_ac_master_script
+
+# If timer finishes - turn this thing off and send a notification (use yours)
+  - id: k1_ac_timer
+    alias: K1 AC Timer off
+    description: 'Turnes off AC for the timer'
+    trigger:
+    - platform: event
+      event_type: timer.finished
+      event_data:
+        entity_id: timer.k1_ac_timer
+    action:
+    - service: climate.set_hvac_mode
+      data:
+        entity_id: climate.k1_ac
+        hvac_mode: 'off'
+    - service: notify.family_telegram
+      data:
+        message: | 
+            {{"\U0001F550"}}{{"\U0001F505"}} K1 AC was turned off by the timer
+            
+# Fallback automation
+  - id: k1_ac_fallback
+    alias: K1 AC falback power check
+    description: 'Checks after pressing climate off if power was off or on'
+    trigger:
+    - platform: state
+      entity_id: climate.k1_ac
+      to: "cool"
+      for: "00:01:00"
+    - platform: state
+      entity_id: climate.k1_ac
+      to: "off"
+      for: "00:03:00"
+    - platform: state
+      entity_id: climate.k1_ac
+      to: "heat"
+      for: "00:01:00"
+    condition:
+      condition: or
+      conditions:
+        - condition: template
+          value_template: '{{ states("climate.k1_ac") != "off" and states("sensor.k1_ac_power_state") == "Off" }}'
+        - condition: template
+          value_template: '{{ states("climate.k1_ac") == "off" and states("sensor.k1_ac_power_state") == "On" }}'
+    action:
+      service: notify.family_telegram
+      data:
+        message: | 
+            {{"\U00002744"}}{{"\U0000274C"}}{{"\U000026A1"}}      
+            K1 AC was turned {{ states("climate.k1_ac") }}
+            but the power is still {{ states("sensor.k1_ac_power_state") }}
+
+script: 
+  k1_ac_master_script:
+    description: 'Takes all data for k1 ac and runs script for boradlink to send a command'
+# TODO Condition если off то не отправлять комманду
+    sequence:
+      - service: script.turn_on
+        data_template:
+          entity_id: >
+            script.{{ states('sensor.k1_ac_data') }}
+#       - service: notify.notify
+#         data_template:
+#           message: | 
+#             Turned the script from master script.{{ states('sensor.k1_ac_data') }}
+#             Check condition was {{ states('sensor.k1_ac_data') != states('input_text.k1_ac_prev_data') }}
+#             Sensor ex_data was {{ states('input_text.k1_ac_prev_data') }}
+      - service: input_text.set_value
+        data_template:
+          entity_id: input_text.k1_ac_prev_data
+          value: "{{ states('sensor.k1_ac_data') }}"            
+
+# TIMER commands. Used to manage input time value by +- 15 minutes
+  k1_ac_timerup:
+     alias: 'Increase k1_ac timer for 15 minutes'
+     sequence:
+      - service: input_datetime.set_datetime
+        data_template:
+          entity_id: input_datetime.k1_ac_timer
+          time: > 
+            {{ as_timestamp ((state_attr('input_datetime.k1_ac_timer', 'timestamp') + 15*60) | int | timestamp_utc) | timestamp_custom('%H:%M:%S') }}
+  
+  k1_ac_timerdown:
+     alias: 'Decrease k1_ac timer for 15 minutes'
+     sequence:
+      - service: input_datetime.set_datetime
+        data_template:
+          entity_id: input_datetime.k1_ac_timer
+          time: >
+            {% if state_attr('input_datetime.k1_ac_timer', 'timestamp') < 15*60 %}
+                00:00:00
+              {% else %}
+                {{ as_timestamp ((state_attr('input_datetime.k1_ac_timer', 'timestamp') - 15*60) | int | timestamp_utc) | timestamp_custom('%H:%M:%S') }}
+              {% endif %}
+
+#ALL BROADLINK commands. Create a matrix of values
+# # #
+# # #
+# # #
+  turn_k1_ac_off:
+     alias: 'Turn off AC in kitchen'
+     sequence:
+     - service: remote.send_command
+       data:
+           entity_id: remote.broadlink
+           device: k1_ac
+           command: power off
+           num_repeats: 2
+  
+  #K1 AC management. 24. Heat Up \\ Heat Down \\ Cool Up \\ Cool Down
+  turn_k1_ac_heat_24_up:
+     alias: "Turn AC heating in kitchen to 24 up"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABJ5QVExQTFTcVNxUTFRIVExUTFBMVExUTFTYVExUTFRIWEhUTFRIWEhYSFRIVNxU3FRMVExUSFhIVEhU3FRMVNxUTFRIVNxUTFQACkRUTFTcVExQTFRMVEhUTFRMWERYSFhIVEhUTFRMVNhUTFRMVExUSFRMWEhUSFRMVExUSFhIVExQTFRMVNxUSFhIVAA0FAAAAAAAA"
+  turn_k1_ac_heat_24_down:
+     alias: "Turn AC heating in kitchen to 24 down"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABKZMWNRcRFhIWNhYRFhIWEhYRFhIWEhYRFjYWEhYSFhEWEhYSFhEWEhYSFhEWNhY2FjYWEhYRFhIWEhY1FxEWNhYSFhEXNRYSFgACkBcRFjYWNhYSFhEWEhYSFhEWEhYSFhEWEhYSFhEWNhYSFhEWEhYSFhEXERYSFhEWEhYSFhEWEhYSFjUXNRY2FjYWAA0FAAAAAAAA"
+  turn_k1_ac_cool_24_up:
+     alias: "Turn AC cooling in kitchen to 24 up"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABKJMWNhYSFhEWNhYSFhEWEhYSFhEWEhYSFjYWERYSFhIWERYSFhIWERYSFhIWNRY2FjYWEhYSFhEWEhY2FhEWNhcRFhIWNRcRFgACkRYRFjYWEhYSFhEWEhYSFhEWEhYSFhEWEhYSFhEWNhYSFhEWEhYSFhEWEhYSFhEWEhYSFhEWEhYSFjUXNRY2FjYWAA0FAAAAAAAA"
+  turn_k1_ac_cool_24_down:
+     alias: "Turn AC cooling in kitchen to 24 down"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABKZMWNRcRFhIWNhYRFhIWEhYRFhIWEhYRFjYWEhYSFhEWEhYSFhEWEhYSFhEWNhY2FjYWEhYRFhIWEhY1FxEWNhYSFhEXNRYSFgACkBcRFjYWNhYSFhEWEhYSFhEWEhYSFhEWEhYSFhEWNhYSFhEWEhYSFhEXERYSFhEWEhYSFhEWEhYSFjUXNRY2FjYWAA0FAAAAAAAA"
+
+  #K1 AC management. 25. Heat Up \\ Heat Down \\ Cool Up \\ Cool Down
+  turn_k1_ac_heat_25_up:
+     alias: "Turn AC heating in kitchen to 25 up"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABKJMWEhYRFzUWNhYSFhIWERYSFjYWERcRFjYWEhYRFhIWEhYRFhIWEhYRFhIWNhY2FhEWEhYSFhEWEhY2FhIWNRcRFhIWNhYRFgACkRYSFjUWEhYSFhEWEhYSFhEWEhYSFhEWEhYSFhEWNhYSFhIWERYSFhIWERYSFhIWERYSFhIWERYSFjYWNhYRFhIWAA0FAAAAAAAA"
+  turn_k1_ac_heat_25_down:
+     alias: "Turn AC heating in kitchen to 25 down"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABKZMWERYSFjYWNhYRFhIWEhYRFjYWEhYSFjUXERYSFhEWEhYSFhEWEhYSFhEXNRY2FhIWEhYRFhIWEhY1FxEWNhYSFhEWNhYSFgACkBcRFjYWNhYRFxEWEhYRFhIWEhYRFxEWEhYRFhIWNhYSFhEWEhYSFhEWEhYSFhEWEhYSFhEWEhYSFjUXNRYSFhIWAA0FAAAAAAAA"
+  turn_k1_ac_cool_25_up:
+     alias: "Turn AC cooling in kitchen to 25 up"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABKZIXNRYSFhIWNhYRFhIWEhYRFjYWEhYRFjYWEhYSFhEWEhYSFhEWEhYSFhEWNhY2FjYWEhYRFhIWEhY1FxEWNhYSFhEWNhYSFgACkBcRFjYWEhYRFhIWEhYRFhIWEhYRFhIWEhYRFhIWNhYSFhEWEhYSFhEWEhYRFhIWEhYRFxEWEhYRFhIWEhYRFxEWAA0FAAAAAAAA"
+  turn_k1_ac_cool_25_down:
+     alias: "Turn AC cooling in kitchen to 25 down"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABKJMWNhYSFhEXNRYSFhIWERYSFjYWEhYRFjYWEhYRFhIWEhYRFhIWEhYRFxEWNhY2FjYWERYSFhIWERc1FhIWNhYRFxEWNhYSFgACkBYSFjYWNhYRFhIWEhYRFhIWEhYRFhIWEhYRFhIWNhYRFhIWEhYRFhIWEhYRFhIWEhYRFhIWEhYRFhIWEhYRFhIWAA0FAAAAAAAA"
+
+  #K1 AC management. 26. Heat Up \\ Heat Down \\ Cool Up \\ Cool Down
+  turn_k1_ac_heat_26_up:
+     alias: "Turn AC heating in kitchen to 26 up"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABKZMWERYSFjYWNhYRFhIWEhYRFhIWNhYSFjUXERYSFhIWERYSFhEXERYSFhEWNhY2FhIWERcRFhIWERc1FhIWNhYSFhEWNhYSFgACkBYSFjYWEhYRFhIWEhYRFhIWEhYRFhIWEhYRFhIWNhYRFhIWEhYRFhIWEhYRFhIWEhYRFhIWEhYRFhIWEhY2FhEWAA0FAAAAAAAA"
+  turn_k1_ac_heat_26_down:
+     alias: "Turn AC heating in kitchen to 26 down"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABKJMWEhYRFjYWNhYSFhEWEhYSFhEWNhYSFjYWERYSFhIWERYSFhIWERYSFhIWNRc1FhIWEhYRFhIWEhY2FhEWNhYSFhIVNhYSFgACkRYRFjYWNhYSFhEWEhYSFhEWEhYSFhEWEhYSFhEWNhYSFhIVEhYSFhIVEhYSFhIVEhYSFhIVEhYSFhIVEhY2FhIWAA0FAAAAAAAA"
+  turn_k1_ac_cool_26_up:
+     alias: "Turn AC cooling in kitchen to 26 up"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABKJMWNhYRFxEWNhYSFhEWEhYSFhEXNRYSFjYWERcRFhIWERYSFhIWERYSFhIWNRc1FjYWEhYSFhEWEhY2FhEXNRYSFhIWNRcRFgACkRYRFjYWEhYSFhEWEhYRFxEWEhYRFxEWEhYRFxEWNhYSFhEWEhYSFhEWEhYSFhEWEhYSFhEWEhYSFjUXERYSFhIWAA0FAAAAAAAA"
+  turn_k1_ac_cool_26_down:
+     alias: "Turn AC cooling in kitchen to 26 down"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABKZMWNhYRFhIWNhYRFxEWEhYRFxEWNhYSFjUXERYSFhEXERYSFhEXERYSFhEWNhY2FjYWEhYRFhIWEhY1FxEWNhYSFhEWNhYSFgACkBUTFjYWNhUTFhEWEhYSFhEWEhYSFhEWEhUTFRIVNxUTFhEWEhUTFRIWEhUTFhEWEhYSFRIVExUTFjYVEhYSFhIWAA0FAAAAAAAA"
+
+  #K1 AC management. 27. Heat Up \\ Heat Down \\ Cool Up \\ Cool Down
+  turn_k1_ac_heat_27_up:
+     alias: "Turn AC heating in kitchen to 27 up"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABKZMWERcRFjYWNhYSFhEWEhYSFjUXNRYSFjYWERcRFhIWERcRFhIWERcRFhIWNhY1FxEWEhYSFhEWEhY2FhEXNRYSFhIWNRcRFgACkRYRFzUWEhYSFhEWEhYSFhEWEhYSFhEWEhYRFxEWNhYSFhEXERYSFhEWEhYSFhEWEhYSFhEWEhYSFjUXERY2FhIWAA0FAAAAAAAA"
+  turn_k1_ac_heat_27_down:
+     alias: "Turn AC heating in kitchen to 27 down"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABKJMWEhYRFjYWNhYSFhEWEhYSFjUXNRcRFjYWEhYRFhIWEhYRFhIWEhYRFhIWNhY2FhEWEhYSFhEWEhY2FhIWNRYSFhIWNRcRFgACkRYSFjUWNhYSFhIWERYSFhIWERYSFhIWERYSFhIWNRYSFhIWERYSFhIWERYSFhIWERYSFhIWERYSFjYWEhY1FhIWAA0FAAAAAAAA"
+  turn_k1_ac_cool_27_up:
+     alias: "Turn AC cooling in kitchen to 27 up"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABKJMWNhYSFhIWNRYSFhIWERYSFjYWNhYSFjUWEhYSFhEWEhYSFhEWEhYSFhEWNhU3FjYWEhYRFhIWEhY1FhIWNhUTFhEWNhUTFgACkBYSFjYVExYRFRMWEhYRFRMWEhYRFRMWEhYRFhIWNhYRFhIVExYRFhIWEhYRFRMWEhUSFhIVExUSFRMWNhUTFRIVAA0FAAAAAAAA"
+  turn_k1_ac_cool_27_down:
+     alias: "Turn AC cooling in kitchen to 27 down"   
+     sequence:
+     - service: broadlink.send
+       data:
+           host: 192.168.1.6
+           packet:
+           - "JgCSAAABKJMXNRYSFhIWNhYRFhIWEhYRFjYWNhYSFjUWEhYSFhEWEhYSFhEWEhYSFhIVNhY2FjYWEhYRFxEWEhY2FhEWNhYSFhEWNhYSFgACkBcRFjYWNhYSFhEWEhYSFhEWEhYSFhEWEhYSFhEWNhYSFhEWEhYSFhEWEhYSFhEWEhYSFhEWEhYSFhEWNhYSFhIWAA0FAAAAAAAA"
