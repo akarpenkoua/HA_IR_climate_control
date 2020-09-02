@@ -13,6 +13,7 @@
     - https://github.com/thomasloven/lovelace-card-mod
     - https://github.com/custom-cards/stack-in-card
     - https://github.com/nervetattoo/simple-thermostat
+    
   **Hardware:**
   - Broadlink RM Pro/Mini - Will send the commands to the AC
   - Cooper&Hunter CH-S09XN7 (or any AC with IR remote)
@@ -20,12 +21,11 @@
 
 **As a result:**
 - Package to manage AC: 
-  - Package https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/ir_ac_management.yaml
-  - Button card template https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/ui-lovelace.yaml
-  - Frontend Custom Card https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/custom_climate_card.yaml
+  - [Package](https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/ir_ac_management.yaml)
+  - [Button card template](https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/ui-lovelace.yaml)
+  - [Frontend Custom Card](https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/custom_climate_card.yaml)
   
-Genereal design for Temperature Lovelace View (one card, multiply it for your rooms/zones)
-  - https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/custom_climate_page_card.yaml
+[Genereal design for Temperature Lovelace View (one card, multiply it for your rooms/zones)](https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/custom_climate_page_card.yaml)
 
 #####################################################
 ![Preview](https://user-images.githubusercontent.com/457678/52977264-edf34980-33cc-11e9-903b-cee43b307ed8.png)
