@@ -1,4 +1,4 @@
-I have started it as a day-to-day improvement, but it ended with 400 lines of code. Hope it will be used by someone. 
+# I have started it as a day-to-day improvement, but it ended with 400 lines of code. Hope it will be used by someone. 
 
 **Basic task:**
 - To create a lovely page to controll all temperature and humidiy data for Lovelace from Home Assistant
