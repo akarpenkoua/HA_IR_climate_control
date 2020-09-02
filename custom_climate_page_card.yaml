@@ -1,0 +1,97 @@
+# This is a template to create a view with climate cards. Please go to readmefile at https://github.com/akarpenkoua/HA_IR_climate_control
+# ======= Outdoor card ==========
+- type: custom:swipe-card
+  reset_after: 10
+  parameters:
+    autoHeight: true
+    nested: true
+    centeredSlides: true
+    spaceBetween: 8
+    mousewheel: true
+    scrollbar:
+      hide: false
+      draggable: true
+      snapOnRelease: true
+  cards:
+  # Slide 1 - picture glance  
+  - type: picture-glance
+    title: Outdoor
+    image: /local/outside.png
+    entities:
+      - entity: sensor.zigbee3_humidity_outside 
+        show_state: true  
+      - entity: sensor.zigbee3_temperature_outside
+        show_state: true
+    style: |
+      ha-card.type-picture-glance {
+        height: 200px;
+      }
+      div.wrapper {
+        width: 100px;
+        }
+      div.state {
+         font-size: 25px;
+         line-height: 30px;
+         padding-bottom: 5px;
+        }
+      div.box {
+         font-size: 25px;
+         display: flexs;
+         align-items: center;
+         background-color: rgba(0, 0, 0, 0.4);
+        }
+      .title {
+         width: 150px;
+         line-height: 45px;
+        }
+  # SLide 2 temperature graph          
+  # https://github.com/kalkih/mini-graph-card
+  - type: custom:mini-graph-card
+    name: Outside temperature 24h
+    hours_to_show: 24
+    points_per_hour: 1
+    group_by: hour
+    decimals: 1
+    hour24: true
+    lower_bound: 20
+    upper_bound: 90
+    # lower_bound_secondary: 20
+    # upper_bound_secondary: 35    
+    height: 120
+    show:
+      labels: true
+      labels_secondary: true
+      icon: false
+      fill: fade
+      legend: false
+    color_thresholds:
+      - value: 20
+        color: "#d428d4"
+      - value: 30
+        color: "#d676d6"      
+      - value: 40
+        color: "#43afc4"
+      - value: 50
+        color: "#4476c2"      
+      - value: 60
+        color: "#078bf7"  
+      - value: 70
+        color: "#5600e0"
+      - value: 80
+        color: "#003596"      
+    icon_adaptive_color: true
+    entities:
+      - entity: sensor.zigbee3_humidity_outside
+      - entity: sensor.zigbee3_temperature_outside
+        y_axis: secondary
+        color: "#ffc21c"
+        show_state: true
+        show_fill: false
+        show_points: true
+        smoothing: true
+  # Slide 3 Temp forecast
+  - type: custom:weather-card
+    entity: weather.home
+    current: true
+    details: false
+    forecast: true
