@@ -27,7 +27,7 @@ As a result:
 Genereal design for Temperature Lovelace View (one card, multiply it for your rooms/zones)
   - https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/custom_climate_page_card.yaml
 
-#############################################################################################################
+#####################################################
 
 Logic: 
 General UI layout https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/custom_climate_page_card.yaml
@@ -35,6 +35,7 @@ General UI layout https://github.com/akarpenkoua/HA_IR_climate_control/blob/mast
   - First card - Picture with sensors data
   - Second - mini-graph. Humidity is a key metric to monitor as it's really important to stay helthy at home. 
   - Third+ card - some card to mamage the climate.
+  - Swipe jumps back to the enitial view in 10 seconds
 
 AC IR management package:
 - Main data is collected from virtual climate device to mega-sensor. 
