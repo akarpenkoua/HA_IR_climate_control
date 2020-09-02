@@ -33,7 +33,6 @@ I have started it as a day-to-day improvement, but it ended with 400 lines of co
 ![all](media/ac_gif.gif)
 ![Preview](media/ac_desktop1.jpg)
 ![Preview](media/ac_desktop2.jpg)
-![Preview](media/ac_mobile.jpg)
 
 **Logic:** 
 General [UI layout](https://github.com/akarpenkoua/HA_IR_climate_control/blob/master/custom_climate_page_card.yaml)
